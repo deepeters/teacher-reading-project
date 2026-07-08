@@ -1,366 +1,357 @@
 # Teacher Reading Assignment Portal
 
-A full-stack web application that enables teachers to assign books to students, monitor reading progress, and allow students to track and update their reading assignments.
+A full-stack reading assignment portal for teachers and students.
 
-This project was built as a solution to the **Teacher Reading Assignment Portal Coding Challenge**.
+Teachers can assign books, review student progress, and track assignment status. Students can sign in, view assigned reading, open seeded book content, update reading minutes, and mark assignments as not started, in progress, or completed.
 
----
+This project was built for the Teacher Reading Assignment Portal coding challenge.
 
-# Overview
+## Project Overview
 
-The objective of this project is to demonstrate the design and implementation of a complete web application within a limited time while making pragmatic engineering decisions.
+The application has two authenticated user roles:
 
-The application currently supports two user roles:
+- `TEACHER`: creates reading assignments and monitors progress.
+- `STUDENT`: views assigned books and updates reading progress.
 
-- **Teacher**
-- **Student**
+The backend exposes a secured REST API using JWT bearer tokens. The frontend is a React + TypeScript dashboard with light and dark mode, status chips, progress bars, book cards, and role-specific views.
 
-Teachers can assign books to students and monitor their reading progress.
+## Tech Stack
 
-Students can view their assigned reading, open the assigned book, update the amount of time spent reading, and mark assignments as completed.
-
----
-
-# Tech Stack
-
-## Backend
+Backend:
 
 - Java 21
-- Spring Boot 3
-- Spring Web
+- Spring Boot 4
+- Spring Web MVC
 - Spring Data JPA
 - Spring Security
+- JWT bearer authentication
 - PostgreSQL
-- Flyway
+- Flyway migrations
 - Bean Validation
 - Lombok
+- Springdoc OpenAPI / Swagger UI
 
-## Frontend
+Frontend:
 
 - React
 - TypeScript
 - Vite
 - Axios
+- CSS custom properties for light/dark themes
 
----
-
-# Project Architecture
-
-```text
-                React + TypeScript
-                        │
-                 REST API (JSON)
-                        │
-                Spring Boot Backend
-                        │
-              Spring Data JPA
-                        │
-                  PostgreSQL
-```
-
-The backend exposes RESTful APIs consumed by the React frontend.
-
-The application follows a layered architecture:
+## Project Structure
 
 ```text
-Controller
-     │
-Service
-     │
-Repository
-     │
-Database
+teacher-reading-project/
+├── teacher-reading-portal/   # Spring Boot backend
+├── teacher-reading-ui/       # React + TypeScript frontend
+├── ARCHITECTURE.md
+└── README.md
 ```
 
-This separation keeps business logic isolated from persistence and presentation concerns.
-
----
-
-# Domain Model
-
-## User
-
-Represents both teachers and students.
-
-Fields
-
-- id
-- name
-- email
-- password
-- role
-
-Roles
-
-- TEACHER
-- STUDENT
-
----
-
-## Book
-
-Represents a book available for assignment.
-
-Fields
-
-- id
-- title
-- author
-- description
-- content
-
-Books are seeded into the database and are read-only in this MVP.
-
----
-
-## Assignment
-
-Represents a reading assignment.
-
-Fields
-
-- teacher
-- student
-- book
-- due date
-- status
-- minutes read
-- timestamps
-
-Status values
-
-- NOT_STARTED
-- IN_PROGRESS
-- COMPLETED
-
----
-
-# Features Implemented
-
-## Backend
-
-### Books
-
-- Retrieve available books
-
-### Students
-
-- Retrieve available students
-
-### Assignments
-
-- Create assignment
-- Retrieve teacher assignments
-- Retrieve student assignments
-- Update assignment progress
-- Update minutes read
-
-### Persistence
-
-- PostgreSQL database
-- Flyway schema migrations
-- Seed data
-<img width="1800" height="1169" alt="Screenshot 2026-07-08 at 18 07 23" src="https://github.com/user-attachments/assets/c78f67cc-1e00-4492-a760-adddc594bb02" />
-
----
-
-## Frontend
-
-### Teacher Dashboard
-
-- View books
-- View students
-- Create assignments
-- View assignment progress
-<img width="1800" height="1169" alt="Screenshot 2026-07-08 at 18 07 35" src="https://github.com/user-attachments/assets/adf164aa-2f75-4433-b7b5-fbf61eb8291b" />
-
-
-### Student Dashboard
-
-- View assigned books
-- Open book
-- Read seeded content
-- Update assignment status
-- Update minutes read
-<img width="1800" height="1169" alt="Screenshot 2026-07-08 at 18 07 56" src="https://github.com/user-attachments/assets/f5b0046b-3972-4842-9282-50fa5c1e3d6f" />
-
-
----
-
-# REST API
-
-## Books
-
-```
-GET /api/books
-```
-
----
-
-## Users
-
-```
-GET /api/users/students
-```
-
----
-
-## Assignments
-
-```
-POST /api/assignments
-
-GET /api/assignments/teacher
-
-GET /api/assignments/student
-
-PATCH /api/assignments/{id}/progress
-```
-
----
-
-# Current Project Structure
-
-## Backend
+Backend packages:
 
 ```text
-src/main/java
-
-assignment/
-auth/
-book/
-common/
-config/
-user/
+src/main/java/com/njenga/teacher_reading_portal/
+├── assignment
+├── auth
+├── book
+├── common
+├── config
+└── user
 ```
 
-## Frontend
+Frontend folders:
 
 ```text
 src/
-
-api/
-components/
-pages/
-types/
+├── api
+├── components
+├── pages
+├── types
+└── App.tsx
 ```
 
----
+## Backend Setup
 
-# Assumptions
+Prerequisites:
 
-Because the challenge intentionally leaves several requirements open, the following assumptions were made:
+- Java 21
+- PostgreSQL
+- Maven wrapper is included in `teacher-reading-portal`
 
-- Authentication is simplified during initial development.
-- Books are read-only.
-- Books are seeded through Flyway.
-- One assignment links one teacher, one student, and one book.
-- Minutes read are manually entered by students.
-- Students can only update their own assignments.
-- Teachers can view all assignments they created.
-
----
-
-## Backend Improvements
-
-- Global exception handling
-- Standard API error responses
-- Swagger / OpenAPI
-- DTO validation improvements
-- Service tests
-- Controller tests
-
----
-
-## Frontend Improvements
-
-- Login page
-- React Router
-- Protected routes
-- Improved UI styling
-- Responsive layouts
-- Better form validation
-- Loading indicators
-- Error handling
-
----
-
-## Deployment
-
-- Backend deployment
-- Frontend deployment
-- Environment configuration
-
----
-
-# Future Enhancements
-
-If additional time were available, the following improvements would be considered:
-
-- Classroom management
-- Multiple student assignment
-- Search
-- Pagination
-- Assignment history
-- Notifications
-- Reading analytics
-- Teacher dashboard statistics
-- Book uploads
-- Rich text/PDF book viewer
-- Email reminders
-- Audit logging
-- CI/CD pipeline
-- Docker support
-- Monitoring and observability
-
----
-
-# Running the Project
-
-## Backend
+Create the local database:
 
 ```bash
+createdb teacher_reading_portal
+```
+
+The local datasource defaults are in `teacher-reading-portal/src/main/resources/application.yml`:
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/teacher_reading_portal
+    username: postgres
+    password: postgres
+```
+
+Run the backend:
+
+```bash
+cd teacher-reading-portal
 ./mvnw spring-boot:run
 ```
 
-Backend runs on
+Run backend tests:
 
+```bash
+cd teacher-reading-portal
+./mvnw test
 ```
+
+Backend runs at:
+
+```text
 http://localhost:8080
 ```
 
----
+Swagger UI:
 
-## Frontend
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+## Frontend Setup
+
+Prerequisites:
+
+- Node.js
+- npm
+
+Install dependencies:
 
 ```bash
+cd teacher-reading-ui
 npm install
+```
 
+Run the frontend:
+
+```bash
+cd teacher-reading-ui
 npm run dev
 ```
 
-Frontend runs on
+Build the frontend:
 
+```bash
+cd teacher-reading-ui
+npm run build
 ```
+
+Frontend runs at:
+
+```text
 http://localhost:5173
 ```
 
----
+## Demo Credentials
 
-# Design Philosophy
+All seeded demo users use this password:
 
-This project intentionally prioritises:
+```text
+password
+```
 
-- Clean architecture
-- Readability
-- Simplicity
-- Extensibility
-- Separation of concerns
+Teacher:
 
-Rather than implementing every possible feature, the goal is to produce a maintainable codebase that can evolve into a production-ready application with minimal architectural changes.
+```text
+teacher@example.com
+```
 
----
+Students:
 
-# Author
+```text
+student@example.com
+alice@example.com
+ben@example.com
+grace@example.com
+```
 
-Dennis Njenga
+## API Endpoints
+
+Authentication:
+
+```http
+POST /api/auth/login
+```
+
+Request:
+
+```json
+{
+  "email": "teacher@example.com",
+  "password": "password"
+}
+```
+
+Response includes a JWT:
+
+```json
+{
+  "token": "jwt-token",
+  "user": {
+    "id": 1,
+    "name": "Teacher Demo",
+    "email": "teacher@example.com",
+    "role": "TEACHER"
+  }
+}
+```
+
+Use the token as:
+
+```http
+Authorization: Bearer jwt-token
+```
+
+Books:
+
+```http
+GET /api/books
+```
+
+Users:
+
+```http
+GET /api/users/students
+```
+
+Assignments:
+
+```http
+POST /api/assignments
+GET /api/assignments/teacher
+GET /api/assignments/student
+PATCH /api/assignments/{id}/progress
+```
+
+Create assignment request:
+
+```json
+{
+  "bookId": 1,
+  "studentId": 2,
+  "dueDate": "2026-07-20"
+}
+```
+
+Update progress request:
+
+```json
+{
+  "status": "IN_PROGRESS",
+  "minutesRead": 70
+}
+```
+
+Assignment statuses:
+
+```text
+NOT_STARTED
+IN_PROGRESS
+COMPLETED
+```
+
+## Swagger JWT Testing
+
+Swagger UI supports bearer-token authentication.
+
+1. Open `http://localhost:8080/swagger-ui.html`.
+2. Call `POST /api/auth/login`.
+3. Copy the returned `token`.
+4. Click `Authorize`.
+5. Paste only the JWT value.
+6. Call protected endpoints from Swagger.
+
+## Screenshots
+
+Login:
+
+<img width="1800" height="1169" alt="Login screen" src="https://github.com/user-attachments/assets/c78f67cc-1e00-4492-a760-adddc594bb02" />
+
+Teacher dashboard:
+
+<img width="1800" height="1169" alt="Teacher dashboard" src="https://github.com/user-attachments/assets/adf164aa-2f75-4433-b7b5-fbf61eb8291b" />
+
+Student dashboard:
+
+<img width="1800" height="1169" alt="Student dashboard" src="https://github.com/user-attachments/assets/f5b0046b-3972-4842-9282-50fa5c1e3d6f" />
+
+## Seed Data
+
+Flyway creates and seeds:
+
+- Demo teacher and student users
+- Five books with multi-paragraph content
+- Assignments across all statuses
+- Known demo passwords for local testing
+
+Migrations are stored in:
+
+```text
+teacher-reading-portal/src/main/resources/db/migration
+```
+
+## Deployment Notes
+
+Recommended production changes:
+
+- Set `app.security.jwt.secret` from an environment variable.
+- Set database URL, username, and password from environment variables.
+- Set allowed CORS origins to the deployed frontend URL.
+- Disable SQL logging in production.
+- Use a managed PostgreSQL database.
+- Build the React app with the deployed API base URL.
+- Serve the frontend from a static host such as Vercel, Netlify, or an S3-compatible host.
+- Deploy the backend to a Java-capable host such as Render, Railway, Fly.io, or a container platform.
+
+Suggested backend environment variables:
+
+```text
+SPRING_DATASOURCE_URL
+SPRING_DATASOURCE_USERNAME
+SPRING_DATASOURCE_PASSWORD
+APP_SECURITY_JWT_SECRET
+```
+
+Suggested frontend environment variable:
+
+```text
+VITE_API_BASE_URL
+```
+
+## Verification
+
+Commands used during development:
+
+```bash
+cd teacher-reading-portal
+./mvnw test
+```
+
+```bash
+cd teacher-reading-ui
+npm run build
+```
+
+Current backend test coverage includes service-level tests for books, users, and assignments, plus a Spring context load test.
+
+## Known Future Improvements
+
+- Add `GET /api/auth/me` to verify stored sessions on page refresh.
+- Add frontend 401 handling for expired tokens.
+- Move API base URL and CORS origins fully to environment-based configuration.
+- Add integration tests for authentication and role-based access.
+- Add real deployment profiles for local and production environments.

@@ -2,6 +2,7 @@ package com.njenga.teacher_reading_portal.auth;
 
 import com.njenga.teacher_reading_portal.auth.dto.LoginRequest;
 import com.njenga.teacher_reading_portal.auth.dto.LoginResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +18,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
+    @SecurityRequirements
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
