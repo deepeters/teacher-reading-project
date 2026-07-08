@@ -1,5 +1,7 @@
-package com.njenga.teacher_reading_portal.book;
+package com.njenga.teacher_reading_portal.book.service;
 
+import com.njenga.teacher_reading_portal.book.BookRepository;
+import com.njenga.teacher_reading_portal.book.dto.BookResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -1,5 +1,7 @@
-package com.njenga.teacher_reading_portal.assignment;
+package com.njenga.teacher_reading_portal.assignment.dto;
 
+import com.njenga.teacher_reading_portal.assignment.Assignment;
+import com.njenga.teacher_reading_portal.assignment.AssignmentStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 

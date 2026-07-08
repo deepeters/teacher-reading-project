@@ -1,5 +1,7 @@
-package com.njenga.teacher_reading_portal.book;
+package com.njenga.teacher_reading_portal.book.controller;
 
+import com.njenga.teacher_reading_portal.book.dto.BookResponse;
+import com.njenga.teacher_reading_portal.book.service.BookService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

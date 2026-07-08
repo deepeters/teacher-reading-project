@@ -1,4 +1,4 @@
-package com.njenga.teacher_reading_portal.assignment;
+package com.njenga.teacher_reading_portal.assignment.dto;
 
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;

@@ -1,4 +1,6 @@
-package com.njenga.teacher_reading_portal.book;
+package com.njenga.teacher_reading_portal.book.dto;
+
+import com.njenga.teacher_reading_portal.book.Book;
 
 public record BookResponse(
         Long id,
