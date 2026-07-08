@@ -261,19 +261,6 @@ Because the challenge intentionally leaves several requirements open, the follow
 
 ---
 
-# Work Remaining
-
-The following features are planned before completion.
-
-## Authentication
-
-- JWT authentication
-- Login screen
-- Role-based authorization
-- Route protection
-
----
-
 ## Backend Improvements
 
 - Global exception handling
