@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: teacher-reading-portal
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/teacher_reading_portal
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  flyway:
+    enabled: true
+
+server:
+  port: 8080
