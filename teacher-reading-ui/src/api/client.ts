@@ -3,7 +3,8 @@ import axios from "axios";
 export const TOKEN_STORAGE_KEY = "readingPortalToken";
 
 export const api = axios.create({
-  baseURL: "http://localhost:8080/api",
+  // baseURL: "http://localhost:8080/api",
+  baseURL: "https://teacher-reading-backend-2.onrender.com/api",
 });
 
 export function getStoredToken() {
