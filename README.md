@@ -160,6 +160,7 @@ Status values
 - PostgreSQL database
 - Flyway schema migrations
 - Seed data
+<img width="1800" height="1169" alt="Screenshot 2026-07-08 at 18 07 23" src="https://github.com/user-attachments/assets/c78f67cc-1e00-4492-a760-adddc594bb02" />
 
 ---
 
@@ -171,6 +172,8 @@ Status values
 - View students
 - Create assignments
 - View assignment progress
+<img width="1800" height="1169" alt="Screenshot 2026-07-08 at 18 07 35" src="https://github.com/user-attachments/assets/adf164aa-2f75-4433-b7b5-fbf61eb8291b" />
+
 
 ### Student Dashboard
 
@@ -179,6 +182,8 @@ Status values
 - Read seeded content
 - Update assignment status
 - Update minutes read
+<img width="1800" height="1169" alt="Screenshot 2026-07-08 at 18 07 56" src="https://github.com/user-attachments/assets/f5b0046b-3972-4842-9282-50fa5c1e3d6f" />
+
 
 ---
 
