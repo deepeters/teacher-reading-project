@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import { clearSession, getStoredUser, login, storeSession } from "./api/auth";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
+import type { User } from "./types";
 
-type ViewMode = "TEACHER" | "STUDENT";
 type ThemeMode = "light" | "dark";
 
 function getInitialTheme(): ThemeMode {
@@ -16,13 +17,24 @@ function getInitialTheme(): ThemeMode {
 }
 
 function App() {
-  const [viewMode, setViewMode] = useState<ViewMode>("TEACHER");
+  const [currentUser, setCurrentUser] = useState<User | null>(getStoredUser);
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialTheme);
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
     localStorage.setItem("theme", themeMode);
   }, [themeMode]);
+
+  async function handleLogin(email: string, password: string) {
+    const session = await login({ email, password });
+    storeSession(session);
+    setCurrentUser(session.user);
+  }
+
+  function handleLogout() {
+    clearSession();
+    setCurrentUser(null);
+  }
 
   return (
     <div className="app-shell">
@@ -33,24 +45,12 @@ function App() {
         </div>
 
         <div className="topbar-actions" aria-label="Application controls">
-          <div className="segmented-control" aria-label="Select dashboard">
-            <button
-              type="button"
-              className={viewMode === "TEACHER" ? "active" : ""}
-              aria-pressed={viewMode === "TEACHER"}
-              onClick={() => setViewMode("TEACHER")}
-            >
-              Teacher
-            </button>
-            <button
-              type="button"
-              className={viewMode === "STUDENT" ? "active" : ""}
-              aria-pressed={viewMode === "STUDENT"}
-              onClick={() => setViewMode("STUDENT")}
-            >
-              Student
-            </button>
-          </div>
+          {currentUser && (
+            <div className="user-pill">
+              <span>{currentUser.name}</span>
+              <strong>{currentUser.role.toLowerCase()}</strong>
+            </div>
+          )}
 
           <label className="theme-switch">
             <input
@@ -60,11 +60,112 @@ function App() {
             />
             <span>{themeMode === "dark" ? "Dark" : "Light"}</span>
           </label>
+
+          {currentUser && (
+            <button type="button" className="ghost-button" onClick={handleLogout}>
+              Logout
+            </button>
+          )}
         </div>
       </header>
 
-      {viewMode === "TEACHER" ? <TeacherDashboard /> : <StudentDashboard />}
+      {!currentUser ? (
+        <LoginPage onLogin={handleLogin} />
+      ) : currentUser.role === "TEACHER" ? (
+        <TeacherDashboard />
+      ) : (
+        <StudentDashboard />
+      )}
     </div>
+  );
+}
+
+type LoginPageProps = {
+  onLogin: (email: string, password: string) => Promise<void>;
+};
+
+function LoginPage({ onLogin }: LoginPageProps) {
+  const [email, setEmail] = useState("teacher@example.com");
+  const [password, setPassword] = useState("password");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      await onLogin(email, password);
+    } catch {
+      setError("Invalid email or password.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card">
+        <div>
+          <p className="eyebrow">Secure access</p>
+          <h2>Sign in to your reading workspace.</h2>
+        </div>
+
+        {error && <p className="alert">{error}</p>}
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label>
+            <span>Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              required
+            />
+          </label>
+
+          <label>
+            <span>Password</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </label>
+
+          <button type="submit" className="primary-button" disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Sign In"}
+          </button>
+        </form>
+
+        <div className="demo-logins" aria-label="Demo accounts">
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => {
+              setEmail("teacher@example.com");
+              setPassword("password");
+            }}
+          >
+            Teacher Demo
+          </button>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => {
+              setEmail("student@example.com");
+              setPassword("password");
+            }}
+          >
+            Student Demo
+          </button>
+        </div>
+      </section>
+    </main>
   );
 }
 

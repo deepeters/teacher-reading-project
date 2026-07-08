@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getStudentAssignments,
   updateAssignmentProgress,
@@ -11,6 +11,18 @@ export default function StudentDashboard() {
     useState<Assignment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const completedCount = useMemo(
+    () => assignments.filter((assignment) => assignment.status === "COMPLETED").length,
+    [assignments]
+  );
+  const totalMinutes = useMemo(
+    () => assignments.reduce((total, assignment) => total + assignment.minutesRead, 0),
+    [assignments]
+  );
+  const activeCount = useMemo(
+    () => assignments.filter((assignment) => assignment.status === "IN_PROGRESS").length,
+    [assignments]
+  );
 
   async function loadAssignments() {
     setError("");
@@ -66,20 +78,19 @@ export default function StudentDashboard() {
           <h2>Read assigned books and keep your progress current.</h2>
         </div>
         <div className="metric-strip" aria-label="Reading summary">
-          <div>
+          <div className="metric-card">
+            <span className="metric-icon" aria-hidden="true">A</span>
             <span>{assignments.length}</span>
             <p>Assigned</p>
           </div>
-          <div>
-            <span>
-              {assignments.filter((assignment) => assignment.status === "COMPLETED").length}
-            </span>
+          <div className="metric-card">
+            <span className="metric-icon" aria-hidden="true">C</span>
+            <span>{completedCount}</span>
             <p>Completed</p>
           </div>
-          <div>
-            <span>
-              {assignments.reduce((total, assignment) => total + assignment.minutesRead, 0)}
-            </span>
+          <div className="metric-card">
+            <span className="metric-icon" aria-hidden="true">M</span>
+            <span>{totalMinutes}</span>
             <p>Minutes</p>
           </div>
         </div>
@@ -93,6 +104,10 @@ export default function StudentDashboard() {
             <div>
               <p className="eyebrow">Reading list</p>
               <h3>Assigned Reading</h3>
+            </div>
+            <div className="summary-pills" aria-label="Reading status summary">
+              <span className="summary-pill in-progress">{activeCount} active</span>
+              <span className="summary-pill completed">{completedCount} done</span>
             </div>
             <button type="button" className="ghost-button" onClick={loadAssignments}>
               Refresh
@@ -143,6 +158,14 @@ export default function StudentDashboard() {
                 <dt>Due Date</dt>
                 <dd>{selectedAssignment.dueDate}</dd>
               </div>
+              <div>
+                <dt>Status</dt>
+                <dd><StatusBadge status={selectedAssignment.status} /></dd>
+              </div>
+              <div>
+                <dt>Progress</dt>
+                <dd><ProgressBar minutesRead={selectedAssignment.minutesRead} /></dd>
+              </div>
             </dl>
 
             <article className="book-content">{selectedAssignment.bookContent}</article>
@@ -174,6 +197,11 @@ function AssignmentCard({
   const [minutesRead, setMinutesRead] = useState(assignment.minutesRead);
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    setStatus(assignment.status);
+    setMinutesRead(assignment.minutesRead);
+  }, [assignment.status, assignment.minutesRead]);
+
   async function saveProgress() {
     setIsSaving(true);
 
@@ -187,17 +215,18 @@ function AssignmentCard({
   return (
     <article className={`assignment-card ${isSelected ? "selected" : ""}`}>
       <div className="assignment-card-header">
-        <div>
-          <h4>{assignment.bookTitle}</h4>
-          <p>Due {assignment.dueDate}</p>
+        <div className="assignment-title-group">
+          <div className="book-glyph" aria-hidden="true" />
+          <div>
+            <h4>{assignment.bookTitle}</h4>
+            <p>Due {assignment.dueDate}</p>
+          </div>
         </div>
-        <span className={`status-badge status-${assignment.status.toLowerCase()}`}>
-          {formatStatus(assignment.status)}
-        </span>
+        <StatusBadge status={assignment.status} />
       </div>
 
       <div className="assignment-card-stats">
-        <span>{assignment.minutesRead} minutes read</span>
+        <ProgressBar minutesRead={assignment.minutesRead} />
         <button type="button" className="ghost-button" onClick={onOpen}>
           Open Book
         </button>
@@ -236,4 +265,38 @@ function AssignmentCard({
 
 function formatStatus(status: AssignmentStatus) {
   return status.replace("_", " ").toLowerCase();
+}
+
+function statusIcon(status: AssignmentStatus) {
+  if (status === "COMPLETED") {
+    return "●";
+  }
+
+  if (status === "IN_PROGRESS") {
+    return "●";
+  }
+
+  return "○";
+}
+
+function StatusBadge({ status }: { status: AssignmentStatus }) {
+  return (
+    <span className={`status-badge status-${status.toLowerCase()}`}>
+      <span aria-hidden="true">{statusIcon(status)}</span>
+      {formatStatus(status)}
+    </span>
+  );
+}
+
+function ProgressBar({ minutesRead }: { minutesRead: number }) {
+  const percent = Math.min(100, Math.round((minutesRead / 100) * 100));
+
+  return (
+    <div className="progress-stack">
+      <div className="progress-bar" aria-label={`${minutesRead} minutes read`}>
+        <span style={{ width: `${percent}%` }} />
+      </div>
+      <p>{minutesRead} minutes</p>
+    </div>
+  );
 }

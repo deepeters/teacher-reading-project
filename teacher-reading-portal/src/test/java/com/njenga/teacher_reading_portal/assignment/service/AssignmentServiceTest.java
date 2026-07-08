@@ -13,6 +13,7 @@ import com.njenga.teacher_reading_portal.assignment.AssignmentStatus;
 import com.njenga.teacher_reading_portal.assignment.dto.AssignmentResponse;
 import com.njenga.teacher_reading_portal.assignment.dto.CreateAssignmentRequest;
 import com.njenga.teacher_reading_portal.assignment.dto.UpdateAssignmentProgressRequest;
+import com.njenga.teacher_reading_portal.auth.AuthenticationFacade;
 import com.njenga.teacher_reading_portal.book.Book;
 import com.njenga.teacher_reading_portal.book.BookRepository;
 import com.njenga.teacher_reading_portal.common.NotFoundException;
@@ -29,6 +30,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 @ExtendWith(MockitoExtension.class)
 class AssignmentServiceTest {
@@ -46,11 +48,14 @@ class AssignmentServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private AuthenticationFacade authenticationFacade;
+
     @InjectMocks
     private AssignmentService assignmentService;
 
     @Test
-    void createAssignmentSavesAssignmentForDemoTeacherAndSelectedStudent() {
+    void createAssignmentSavesAssignmentForCurrentTeacherAndSelectedStudent() {
         Book book = book();
         User teacher = teacher();
         User student = student();
@@ -58,7 +63,7 @@ class AssignmentServiceTest {
 
         when(bookRepository.findById(1L)).thenReturn(Optional.of(book));
         when(userRepository.findById(2L)).thenReturn(Optional.of(student));
-        when(userRepository.findByEmail("teacher@example.com")).thenReturn(Optional.of(teacher));
+        when(authenticationFacade.getCurrentUser()).thenReturn(teacher);
         when(assignmentRepository.save(any(Assignment.class))).thenAnswer(invocation -> {
             Assignment assignment = invocation.getArgument(0);
             assignment.setId(10L);
@@ -89,6 +94,22 @@ class AssignmentServiceTest {
     }
 
     @Test
+    void createAssignmentThrowsWhenCurrentUserIsNotATeacher() {
+        User student = student();
+        CreateAssignmentRequest request = new CreateAssignmentRequest(1L, 2L, DUE_DATE);
+
+        when(bookRepository.findById(1L)).thenReturn(Optional.of(book()));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(student));
+        when(authenticationFacade.getCurrentUser()).thenReturn(student);
+
+        assertThatThrownBy(() -> assignmentService.createAssignment(request))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only teachers can create assignments");
+
+        verify(assignmentRepository, never()).save(any());
+    }
+
+    @Test
     void createAssignmentThrowsWhenBookDoesNotExist() {
         CreateAssignmentRequest request = new CreateAssignmentRequest(99L, 2L, DUE_DATE);
         when(bookRepository.findById(99L)).thenReturn(Optional.empty());
@@ -115,11 +136,11 @@ class AssignmentServiceTest {
     }
 
     @Test
-    void getTeacherAssignmentsReturnsAssignmentsForDemoTeacher() {
+    void getTeacherAssignmentsReturnsAssignmentsForCurrentTeacher() {
         User teacher = teacher();
         Assignment assignment = assignment(100L, teacher, student());
 
-        when(userRepository.findByEmail("teacher@example.com")).thenReturn(Optional.of(teacher));
+        when(authenticationFacade.getCurrentUser()).thenReturn(teacher);
         when(assignmentRepository.findByTeacher(teacher)).thenReturn(List.of(assignment));
 
         List<AssignmentResponse> responses = assignmentService.getTeacherAssignments();
@@ -131,11 +152,20 @@ class AssignmentServiceTest {
     }
 
     @Test
-    void getStudentAssignmentsReturnsAssignmentsForDemoStudent() {
+    void getTeacherAssignmentsThrowsWhenCurrentUserIsNotTeacher() {
+        when(authenticationFacade.getCurrentUser()).thenReturn(student());
+
+        assertThatThrownBy(() -> assignmentService.getTeacherAssignments())
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only teachers can view teacher assignments");
+    }
+
+    @Test
+    void getStudentAssignmentsReturnsAssignmentsForCurrentStudent() {
         User student = student();
         Assignment assignment = assignment(101L, teacher(), student);
 
-        when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(student));
+        when(authenticationFacade.getCurrentUser()).thenReturn(student);
         when(assignmentRepository.findByStudent(student)).thenReturn(List.of(assignment));
 
         List<AssignmentResponse> responses = assignmentService.getStudentAssignments();
@@ -147,14 +177,25 @@ class AssignmentServiceTest {
     }
 
     @Test
+    void getStudentAssignmentsThrowsWhenCurrentUserIsNotStudent() {
+        when(authenticationFacade.getCurrentUser()).thenReturn(teacher());
+
+        assertThatThrownBy(() -> assignmentService.getStudentAssignments())
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only students can view student assignments");
+    }
+
+    @Test
     void updateProgressUpdatesStatusAndMinutesRead() {
-        Assignment assignment = assignment(100L, teacher(), student());
+        User student = student();
+        Assignment assignment = assignment(100L, teacher(), student);
         UpdateAssignmentProgressRequest request = new UpdateAssignmentProgressRequest(
                 AssignmentStatus.COMPLETED,
                 45
         );
 
         when(assignmentRepository.findById(100L)).thenReturn(Optional.of(assignment));
+        when(authenticationFacade.getCurrentUser()).thenReturn(student);
         when(assignmentRepository.save(assignment)).thenAnswer(invocation -> invocation.getArgument(0));
 
         AssignmentResponse response = assignmentService.updateProgress(100L, request);
@@ -164,6 +205,50 @@ class AssignmentServiceTest {
         assertThat(response.status()).isEqualTo(AssignmentStatus.COMPLETED);
         assertThat(response.minutesRead()).isEqualTo(45);
         verify(assignmentRepository).save(assignment);
+    }
+
+    @Test
+    void updateProgressThrowsWhenCurrentUserIsNotStudent() {
+        Assignment assignment = assignment(100L, teacher(), student());
+        UpdateAssignmentProgressRequest request = new UpdateAssignmentProgressRequest(
+                AssignmentStatus.COMPLETED,
+                45
+        );
+
+        when(assignmentRepository.findById(100L)).thenReturn(Optional.of(assignment));
+        when(authenticationFacade.getCurrentUser()).thenReturn(teacher());
+
+        assertThatThrownBy(() -> assignmentService.updateProgress(100L, request))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only students can update reading progress");
+
+        verify(assignmentRepository, never()).save(any());
+    }
+
+    @Test
+    void updateProgressThrowsWhenAssignmentBelongsToAnotherStudent() {
+        User currentStudent = student();
+        User otherStudent = User.builder()
+                .id(3L)
+                .name("Alice Student")
+                .email("alice@example.com")
+                .password("encoded-password")
+                .role(UserRole.STUDENT)
+                .build();
+        Assignment assignment = assignment(100L, teacher(), otherStudent);
+        UpdateAssignmentProgressRequest request = new UpdateAssignmentProgressRequest(
+                AssignmentStatus.COMPLETED,
+                45
+        );
+
+        when(assignmentRepository.findById(100L)).thenReturn(Optional.of(assignment));
+        when(authenticationFacade.getCurrentUser()).thenReturn(currentStudent);
+
+        assertThatThrownBy(() -> assignmentService.updateProgress(100L, request))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Students can only update their own assignments");
+
+        verify(assignmentRepository, never()).save(any());
     }
 
     @Test

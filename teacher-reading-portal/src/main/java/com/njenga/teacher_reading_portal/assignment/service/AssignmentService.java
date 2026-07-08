@@ -6,6 +6,7 @@ import com.njenga.teacher_reading_portal.assignment.AssignmentStatus;
 import com.njenga.teacher_reading_portal.assignment.dto.AssignmentResponse;
 import com.njenga.teacher_reading_portal.assignment.dto.CreateAssignmentRequest;
 import com.njenga.teacher_reading_portal.assignment.dto.UpdateAssignmentProgressRequest;
+import com.njenga.teacher_reading_portal.auth.AuthenticationFacade;
 import com.njenga.teacher_reading_portal.book.Book;
 import com.njenga.teacher_reading_portal.book.BookRepository;
 import com.njenga.teacher_reading_portal.common.NotFoundException;
@@ -14,6 +15,7 @@ import com.njenga.teacher_reading_portal.user.UserRepository;
 import com.njenga.teacher_reading_portal.user.UserRole;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,6 +25,7 @@ public class AssignmentService {
     private final AssignmentRepository assignmentRepository;
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
+    private final AuthenticationFacade authenticationFacade;
 
     public AssignmentResponse createAssignment(CreateAssignmentRequest request) {
         Book book = bookRepository.findById(request.bookId())
@@ -35,8 +38,11 @@ public class AssignmentService {
             throw new IllegalArgumentException("Selected user is not a student");
         }
 
-        User teacher = userRepository.findByEmail("teacher@example.com")
-                .orElseThrow(() -> new NotFoundException("Demo teacher not found"));
+        User teacher = authenticationFacade.getCurrentUser();
+
+        if (teacher.getRole() != UserRole.TEACHER) {
+            throw new AccessDeniedException("Only teachers can create assignments");
+        }
 
         Assignment assignment = Assignment.builder()
                 .book(book)
@@ -53,8 +59,11 @@ public class AssignmentService {
     }
 
     public List<AssignmentResponse> getTeacherAssignments() {
-        User teacher = userRepository.findByEmail("teacher@example.com")
-                .orElseThrow(() -> new NotFoundException("Demo teacher not found"));
+        User teacher = authenticationFacade.getCurrentUser();
+
+        if (teacher.getRole() != UserRole.TEACHER) {
+            throw new AccessDeniedException("Only teachers can view teacher assignments");
+        }
 
         return assignmentRepository.findByTeacher(teacher)
                 .stream()
@@ -63,8 +72,11 @@ public class AssignmentService {
     }
 
     public List<AssignmentResponse> getStudentAssignments() {
-        User student = userRepository.findByEmail("student@example.com")
-                .orElseThrow(() -> new NotFoundException("Demo student not found"));
+        User student = authenticationFacade.getCurrentUser();
+
+        if (student.getRole() != UserRole.STUDENT) {
+            throw new AccessDeniedException("Only students can view student assignments");
+        }
 
         return assignmentRepository.findByStudent(student)
                 .stream()
@@ -78,6 +90,15 @@ public class AssignmentService {
     ) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new NotFoundException("Assignment not found"));
+        User student = authenticationFacade.getCurrentUser();
+
+        if (student.getRole() != UserRole.STUDENT) {
+            throw new AccessDeniedException("Only students can update reading progress");
+        }
+
+        if (!assignment.getStudent().getId().equals(student.getId())) {
+            throw new AccessDeniedException("Students can only update their own assignments");
+        }
 
         assignment.setStatus(request.status());
         assignment.setMinutesRead(request.minutesRead());

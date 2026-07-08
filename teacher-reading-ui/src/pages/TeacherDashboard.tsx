@@ -20,6 +20,15 @@ export default function TeacherDashboard() {
     () => assignments.filter((assignment) => assignment.status === "COMPLETED").length,
     [assignments]
   );
+  const inProgressCount = useMemo(
+    () => assignments.filter((assignment) => assignment.status === "IN_PROGRESS").length,
+    [assignments]
+  );
+  const totalMinutes = useMemo(
+    () => assignments.reduce((total, assignment) => total + assignment.minutesRead, 0),
+    [assignments]
+  );
+  const selectedBook = books.find((book) => String(book.id) === bookId);
 
   async function loadData() {
     setError("");
@@ -78,15 +87,18 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="metric-strip" aria-label="Assignment summary">
-          <div>
+          <div className="metric-card">
+            <span className="metric-icon" aria-hidden="true">B</span>
             <span>{books.length}</span>
             <p>Books</p>
           </div>
-          <div>
+          <div className="metric-card">
+            <span className="metric-icon" aria-hidden="true">S</span>
             <span>{students.length}</span>
             <p>Students</p>
           </div>
-          <div>
+          <div className="metric-card">
+            <span className="metric-icon" aria-hidden="true">C</span>
             <span>{completedCount}/{assignments.length}</span>
             <p>Completed</p>
           </div>
@@ -103,6 +115,17 @@ export default function TeacherDashboard() {
               <h3>Create Reading Assignment</h3>
             </div>
           </div>
+
+          {selectedBook && (
+            <div className="selected-book-preview">
+              <div className="book-glyph" aria-hidden="true" />
+              <div>
+                <p className="eyebrow">Selected book</p>
+                <h4>{selectedBook.title}</h4>
+                <p>{selectedBook.author}</p>
+              </div>
+            </div>
+          )}
 
           <label>
             <span>Book</span>
@@ -153,6 +176,11 @@ export default function TeacherDashboard() {
               <p className="eyebrow">Progress</p>
               <h3>Created Assignments</h3>
             </div>
+            <div className="summary-pills" aria-label="Status summary">
+              <span className="summary-pill completed">{completedCount} completed</span>
+              <span className="summary-pill in-progress">{inProgressCount} active</span>
+              <span className="summary-pill">{totalMinutes} minutes</span>
+            </div>
             <button type="button" className="ghost-button" onClick={loadData}>
               Refresh
             </button>
@@ -181,11 +209,11 @@ export default function TeacherDashboard() {
                       <td>{assignment.bookTitle}</td>
                       <td>{assignment.dueDate}</td>
                       <td>
-                        <span className={`status-badge status-${assignment.status.toLowerCase()}`}>
-                          {formatStatus(assignment.status)}
-                        </span>
+                        <StatusBadge status={assignment.status} />
                       </td>
-                      <td>{assignment.minutesRead}</td>
+                      <td>
+                        <ProgressBar minutesRead={assignment.minutesRead} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -194,10 +222,74 @@ export default function TeacherDashboard() {
           )}
         </section>
       </section>
+
+      <section className="panel book-catalog">
+        <div className="panel-header">
+          <div>
+            <p className="eyebrow">Library</p>
+            <h3>Book Cards</h3>
+          </div>
+        </div>
+
+        <div className="book-grid">
+          {books.map((book) => (
+            <article className={`book-card ${String(book.id) === bookId ? "selected" : ""}`} key={book.id}>
+              <div className="book-card-cover" aria-hidden="true" />
+              <div className="book-card-body">
+                <h4>{book.title}</h4>
+                <dl>
+                  <div>
+                    <dt>Author</dt>
+                    <dd>{book.author}</dd>
+                  </div>
+                </dl>
+                <p>{book.description}</p>
+              </div>
+              <button type="button" className="ghost-button" onClick={() => setBookId(String(book.id))}>
+                Assign
+              </button>
+            </article>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
 
 function formatStatus(status: Assignment["status"]) {
   return status.replace("_", " ").toLowerCase();
+}
+
+function statusIcon(status: Assignment["status"]) {
+  if (status === "COMPLETED") {
+    return "●";
+  }
+
+  if (status === "IN_PROGRESS") {
+    return "●";
+  }
+
+  return "○";
+}
+
+function StatusBadge({ status }: { status: Assignment["status"] }) {
+  return (
+    <span className={`status-badge status-${status.toLowerCase()}`}>
+      <span aria-hidden="true">{statusIcon(status)}</span>
+      {formatStatus(status)}
+    </span>
+  );
+}
+
+function ProgressBar({ minutesRead }: { minutesRead: number }) {
+  const percent = Math.min(100, Math.round((minutesRead / 100) * 100));
+
+  return (
+    <div className="progress-stack">
+      <div className="progress-bar" aria-label={`${minutesRead} minutes read`}>
+        <span style={{ width: `${percent}%` }} />
+      </div>
+      <p>{minutesRead} minutes</p>
+    </div>
+  );
 }
